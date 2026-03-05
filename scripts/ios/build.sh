@@ -19,6 +19,23 @@ cmake --build . --target prepare_cross_compiling
 
 echo ">>> Building OpenSSL..."
 cd ../example/ios
+
+# Clone the Python-Apple-support dependency ahead of time
+# so we can patch it BEFORE the Makefile runs clang with the wrong target triple.
+git clone https://github.com/beeware/Python-Apple-support
+cd Python-Apple-support
+git checkout 6f43aba0ddd5a9f52f39775d0141bd4363614020
+git reset --hard
+git apply ../Python-Apple-support.patch
+
+echo ">>> Patching '-simulator-simulator' bug in Python-Apple-support Makefiles..."
+# Fix all occurrences of the invalid double-simulator target triple in-place
+grep -rl "\-simulator-simulator" . | xargs -I{} sed -i '' 's/-simulator-simulator/-simulator/g'
+
+cd ..
+
+# Now run the openssl build (the Python-Apple-support clone already exists and is patched,
+# so build-openssl.sh will skip re-cloning and use our patched version)
 ./build-openssl.sh
 
 echo ">>> Building TDLib (tdjson.xcframework)..."

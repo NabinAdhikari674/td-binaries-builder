@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-web:
     runs-on: ubuntu-latest
@@ -26,5 +29,5 @@ jobs:
           name: WebAssembly ${{ env.version }}-${{ env.commit_hash }}
           body: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: 'td/build/tdlib.zip'
+          artifacts: 'td/build-wasm/tdlib.zip'
           allowUpdates: true

@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-ios:
     runs-on: macos-latest
@@ -26,5 +29,5 @@ jobs:
           name: iOS ${{ env.version }}-${{ env.commit_hash }}
           body: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: 'td/tdjson.xcframework.zip'
+          artifacts: 'tdjson.xcframework.zip'
           allowUpdates: true

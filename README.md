@@ -1,20 +1,31 @@
-# TDLib Pre-Compiled Binaries
+# TDLib Binaries Builder
 
-Automated GitHub Actions and shell scripts to compile [TDLib](https://github.com/tdlib/td) (Telegram Database Library) into `.so`, `.xcframework`, and `.wasm` artifacts for Flutter integration.
+A CI/CD infrastructure designed to compile the **Telegram Database Library (TDLib)** for high-performance cross-platform Flutter and Dart applications. 
 
-## Architecture
+This repository automates the complex native compilation process for Android, iOS, and Web (WebAssembly), providing ready-to-use binaries as GitHub Releases.
 
-* **`.github/workflows/`**: Contains parallel execution matrix logic.
-  * `master-build.yml`: Orchestrator for platform builds.
-  * `build-*.yml`: Reusable platform-specific matrix execution nodes.
-* **`scripts/`**: Reusable bash shell execution scripts that map line-by-line build logic.
-* **`td-version.json`**: Central source of truth for TDLib target version & commit hashes.
+## 🚀 Key Features
 
-## Manual Execution 
+*   **Matrix Parallel Builds**: Utilizes GitHub Actions matrix strategy to compile multiple Android architectures simultaneously, significantly reducing build times.
+*   **Modern Target Support**: 
+    *   **Android**: Generates `libtdjson.so` for `arm64-v8a`, `armeabi-v7a`, `x86_64`, and `x86`.
+    *   **iOS**: Produces a modern `tdjson.xcframework` supporting both Physical Devices and Simulators.
+    *   **Web**: Compiles `tdjson.js` and `tdjson.wasm` using the Emscripten SDK.
+*   **Version Controlled**: Pin exact TDLib versions and commit hashes for deterministic, reproducible builds.
 
-You can manually trigger compilation builds without necessarily tying them to `push` hooks.
-Go to your GitHub Actions tab > **Master TDLib Build** -> `Run Workflow`. 
+## 🛠 Repository Structure
 
-## Updating the Binary
+*   `.github/workflows/`: Workflow logic for parallel and sequential build jobs.
+*   `scripts/`: Platform-specific bash scripts utilizing official TDLib build helpers.
+*   `td-version.json`: The central configuration file for targeting specific TDLib releases.
 
-Just update `td-version.json`, ensure it's structurally valid, and push it to `main`. The `master-build.yml` Action will sequentially kick everything off.
+## ⚖️ License
+
+This project is licensed under a **Custom Source Available License**.
+
+*   **Personal Use**: Allowed, similar to the MIT license terms.
+*   **Commercial Use**: Strictly prohibited without explicit written permission from the author.
+
+For full terms, see the [LICENSE](LICENSE) file.
+
+Please note that this project provides build automation for TDLib. The library itself is subject to the [TDLib License](https://github.com/tdlib/td/blob/master/LICENSE_1_0.txt) (Boost Software License 1.0).

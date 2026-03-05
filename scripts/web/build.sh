@@ -22,9 +22,16 @@ git fetch https://github.com/tdlib/td.git $commit_hash
 git checkout $commit_hash
 git show --summary
 
+echo ">>> Preparing cross-compilation native tools..."
+mkdir build-native
+cd build-native
+cmake ..
+cmake --build . --target prepare_cross_compiling
+cd ..
+
 echo ">>> Building WASM via Emscripten..."
-mkdir build
-cd build
+mkdir build-wasm
+cd build-wasm
 emcmake cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DTD_ENABLE_LTO=ON ..
 emmake make -j4
 
