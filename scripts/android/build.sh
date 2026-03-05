@@ -18,13 +18,13 @@ cd ..
 cd $TD_PATH/example/android
 
 echo ">>> Building OpenSSL for Android ($ARCH)..."
-# 1. Build OpenSSL (Required by TDLib)
-# TDLib provides a helper for this in their examples
-./build-openssl.sh $NDK_PATH "34" "" "" "" $ARCH
+# TDLib's build-openssl.sh expects: ANDROID_SDK_ROOT ANDROID_NDK_VERSION OPENSSL_INSTALL_DIR OPENSSL_VERSION
+NDK_VERSION=$(basename "$ANDROID_NDK_LATEST_HOME")
+SDK_ROOT=$(dirname $(dirname "$ANDROID_NDK_LATEST_HOME"))
+./build-openssl.sh $SDK_ROOT $NDK_VERSION "" "" "" $ARCH
 
 echo ">>> Building TDLib with JSON interface for Android ($ARCH)..."
-# 2. Build TDLib with JSON interface
-# Params: NDK_PATH, SDK_VERSION, OPENSSL_PATH, STL, INTERFACE
-./build-tdlib.sh $NDK_PATH "34" "" "" "JSON" $ARCH
+# TDLib's build-tdlib.sh expects: ANDROID_SDK_ROOT ANDROID_NDK_VERSION OPENSSL_INSTALL_DIR STL_VERSION INTERFACE ARCH
+./build-tdlib.sh $SDK_ROOT $NDK_VERSION "" "" "JSON" $ARCH
 
 echo ">>> Build for $ARCH completed successfully!"
