@@ -11,7 +11,7 @@ if [ ! -d "td" ]; then
     git clone https://github.com/tdlib/td.git
 fi
 cd td
-git fetch origin $COMMIT_HASH
+git fetch https://github.com/tdlib/td.git $COMMIT_HASH
 git checkout $COMMIT_HASH
 cd ..
 

@@ -18,6 +18,7 @@ cd $GITHUB_WORKSPACE
 echo ">>> Cloning TDLib Commit: $commit_hash"
 git clone https://github.com/tdlib/td.git
 cd td
+git fetch https://github.com/tdlib/td.git $commit_hash
 git checkout $commit_hash
 git show --summary
 
