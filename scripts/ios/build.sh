@@ -21,38 +21,12 @@ cd ..
 echo ">>> Navigating to iOS example directory..."
 cd example/ios
 
-git clone https://github.com/beeware/Python-Apple-support
-cd Python-Apple-support
-git checkout 6f43aba0ddd5a9f52f39775d0141bd4363614020
-git reset --hard
-git apply ../Python-Apple-support.patch || echo "Patch application warning (may be OK)"
-
-echo ">>> Fixing TARGET_TRIPLE -simulator-simulator bug in patched Makefile..."
-python3 << 'PYFIX'
-with open('Makefile', 'r') as f:
-    content = f.read()
-
-old = 'TARGET_TRIPLE-$(target)=$$(ARCH-$(target))-apple-$$(OS_LOWER-$(target))-simulator'
-new = 'TARGET_TRIPLE-$(target)=$$(ARCH-$(target))-apple-$$(subst -simulator,,$$(OS_LOWER-$(target)))-simulator'
-
-if old in content:
-    content = content.replace(old, new)
-    print(f'SUCCESS: Replaced TARGET_TRIPLE line')
-else:
-    print('WARNING: Could not find exact TARGET_TRIPLE line to patch')
-    # Dump all TARGET_TRIPLE lines for debugging
-    for i, line in enumerate(content.split('\n')):
-        if 'TARGET_TRIPLE' in line:
-            print(f'  Line {i+1}: {line.strip()}')
-
-with open('Makefile', 'w') as f:
-    f.write(content)
-PYFIX
-
-echo "--- Verify fix applied ---"
-grep -n "TARGET_TRIPLE" Makefile | head -10
-
-cd ..
+echo ">>> Configuring TDLib iOS build scripts..."
+sed -i.bak 's/^platforms=".*"/platforms="iOS"/' build-openssl.sh
+sed -i.bak 's/^platforms=".*"/platforms="iOS"/' build.sh
+echo "--- Verifying Patches ---"
+echo "build-openssl.sh:" && grep 'platforms=' build-openssl.sh
+echo "build.sh:" && grep 'platforms=' build.sh
 
 echo ">>> Building OpenSSL for iOS..."
 ./build-openssl.sh

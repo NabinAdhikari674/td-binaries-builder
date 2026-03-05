@@ -22,6 +22,11 @@ git fetch https://github.com/tdlib/td.git $commit_hash
 git checkout $commit_hash
 git show --summary
 
+echo ">>> Patching TDLib CMakeLists.txt to allow building OpenSSL for WebAssembly..."
+sed -i "/message(WARNING \"Can't find OpenSSL: stop building\")/{n;d}" CMakeLists.txt
+echo "--- Verifying patch (the 'return()' line should be gone) ---"
+grep -C 4 "Can't find OpenSSL" CMakeLists.txt
+
 echo ">>> Step 1: Build native tools (prepare_cross_compiling generates required source files)..."
 mkdir build-native
 cd build-native
