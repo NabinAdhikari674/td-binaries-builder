@@ -1,0 +1,15 @@
+# MacOS
+.DS_Store
+
+# TDLib checkouts
+td/
+
+# WebAssembly SDK
+emsdk/
+
+# Temporary paths
+/opt/
+
+# Archives
+*.zip
+*.tar.gz

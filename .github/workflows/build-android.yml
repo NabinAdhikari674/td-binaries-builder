@@ -1,0 +1,74 @@
+name: Android Build
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build-android-arch:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [arm64-v8a, armeabi-v7a, x86_64, x86]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake gperf php-cli jq
+
+      - name: Load JSON variables
+        run: |
+          echo "version=$(jq -r '.version' td-version.json)" >> $GITHUB_ENV
+          echo "commit_hash=$(jq -r '.commit_hash' td-version.json)" >> $GITHUB_ENV
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26b
+
+      - name: Run Android Build Script
+        run: bash scripts/android/build.sh ${{ matrix.arch }} ${{ env.commit_hash }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdjson-android-${{ matrix.arch }}
+          path: td/example/android/tdlib/libs/${{ matrix.arch }}/libtdjsonandroid.so
+
+  package-and-release:
+    needs: build-android-arch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load JSON variables
+        run: |
+          echo "version=$(jq -r '.version' td-version.json)" >> $GITHUB_ENV
+          echo "commit_hash=$(jq -r '.commit_hash' td-version.json)" >> $GITHUB_ENV
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: libs
+
+      - name: Package artifacts
+        run: |
+          mkdir -p final_libs/arm64-v8a final_libs/armeabi-v7a final_libs/x86 final_libs/x86_64
+          mv libs/tdjson-android-arm64-v8a/libtdjsonandroid.so final_libs/arm64-v8a/libtdjson.so || true
+          mv libs/tdjson-android-armeabi-v7a/libtdjsonandroid.so final_libs/armeabi-v7a/libtdjson.so || true
+          mv libs/tdjson-android-x86/libtdjsonandroid.so final_libs/x86/libtdjson.so || true
+          mv libs/tdjson-android-x86_64/libtdjsonandroid.so final_libs/x86_64/libtdjson.so || true
+          cd final_libs
+          zip -r ../libs.zip .
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: android-${{ env.version }}-${{ env.commit_hash }}
+          name: Android ${{ env.version }}-${{ env.commit_hash }}
+          body: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: 'libs.zip'
+          allowUpdates: true

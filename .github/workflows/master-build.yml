@@ -1,0 +1,22 @@
+name: Master TDLib Build
+
+on:
+  push:
+    paths:
+      - 'td-version.json'
+      - '.github/workflows/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    uses: ./.github/workflows/build-android.yml
+    secrets: inherit
+
+  build-ios:
+    uses: ./.github/workflows/build-ios.yml
+    secrets: inherit
+
+  build-web:
+    uses: ./.github/workflows/build-web.yml
+    secrets: inherit
