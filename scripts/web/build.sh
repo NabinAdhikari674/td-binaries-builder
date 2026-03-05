@@ -22,35 +22,49 @@ git fetch https://github.com/tdlib/td.git $commit_hash
 git checkout $commit_hash
 git show --summary
 
-echo ">>> Preparing cross-compilation native tools..."
+echo ">>> Step 1: Build native tools (prepare_cross_compiling generates required source files)..."
 mkdir build-native
 cd build-native
 cmake ..
 cmake --build . --target prepare_cross_compiling
 cd ..
 
-echo ">>> Building WASM via Emscripten..."
+echo ">>> Step 2: Build with Emscripten..."
 mkdir build-wasm
 cd build-wasm
-emcmake cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DTD_ENABLE_LTO=ON ..
-emmake make -j4
+source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
 
-echo ">>> Packaging artifacts..."
-echo "--- Files in build-wasm/ after build ---"
+# Configure with Emscripten. tdjson is the shared-library target.
+# We use tdjson_static for WASM since shared libs don't apply in WASM context.
+emcmake cmake \
+  -DCMAKE_BUILD_TYPE=MinSizeRel \
+  -DTD_ENABLE_LTO=ON \
+  -DCMAKE_CROSSCOMPILING=TRUE \
+  ..
+
+echo ">>> Step 3: Listing all available CMake targets..."
+emmake make help 2>&1 | grep -i "td\|json\|wasm\|emscripten" | head -20 || true
+
+echo ">>> Step 4: Build the Emscripten tdjson target..."
+# Build tdjsonandroid (JSON interface for non-JVM) which Emscripten can link
+emmake make -j4 tdjson_static || emmake make -j4
+
+echo ">>> Step 5: Listing build directory..."
+find . -maxdepth 3 -name "*.js" -o -name "*.wasm" 2>/dev/null
 ls -la
 
-JS_FILE=$(find . -maxdepth 1 -name "*.js" ! -name "*.worker.js" | head -1)
-WASM_FILE=$(find . -maxdepth 1 -name "*.wasm" | head -1)
+echo ">>> Step 6: Packaging artifacts..."
+JS_FILE=$(find . -maxdepth 3 -name "*.js" ! -name "*.worker.js" | head -1)
+WASM_FILE=$(find . -maxdepth 3 -name "*.wasm" | head -1)
 
 if [ -z "$JS_FILE" ] || [ -z "$WASM_FILE" ]; then
-  echo "ERROR: Could not find output JS or WASM files in build-wasm/. Build may have failed silently."
-  ls -la
+  echo "ERROR: No .js/.wasm output files found. Dumping full build tree for diagnosis:"
+  find . -type f | head -50
   exit 1
 fi
 
 echo "Found JS: $JS_FILE"
 echo "Found WASM: $WASM_FILE"
-
 zip tdlib.zip "$JS_FILE" "$WASM_FILE"
 
 echo ">>> Web build complete!"

@@ -18,31 +18,43 @@ cmake ..
 cmake --build . --target prepare_cross_compiling
 cd ..
 
-echo ">>> Cloning and patching Python-Apple-support before OpenSSL build..."
+echo ">>> Navigating to iOS example directory..."
 cd example/ios
 
-# Pre-clone Python-Apple-support at the exact pinned commit TDLib uses
-git clone https://github.com/beeware/Python-Apple-support Python-Apple-support
+git clone https://github.com/beeware/Python-Apple-support
 cd Python-Apple-support
 git checkout 6f43aba0ddd5a9f52f39775d0141bd4363614020
 git reset --hard
+git apply ../Python-Apple-support.patch || echo "Patch application warning (may be OK)"
 
-# Apply TDLib's own patch first
-git apply ../Python-Apple-support.patch || echo "Patch already applied or not needed"
+echo ">>> Fixing TARGET_TRIPLE -simulator-simulator bug in patched Makefile..."
+python3 << 'PYFIX'
+with open('Makefile', 'r') as f:
+    content = f.read()
 
-echo ">>> Fixing -simulator-simulator bug in Python-Apple-support CC variables..."
-# The Makefile defines CC-$(target) using $(SDK).$(ARCH)
-# where SDK can be 'iphonesimulator' and then appends '-simulator' 
-# producing 'arm64-apple-ios-simulator-simulator'.
-# Fix: rewrite the -target flag pattern to deduplicate the simulator suffix.
-sed -i '' 's/-simulator-simulator/-simulator/g' Makefile
+old = 'TARGET_TRIPLE-$(target)=$$(ARCH-$(target))-apple-$$(OS_LOWER-$(target))-simulator'
+new = 'TARGET_TRIPLE-$(target)=$$(ARCH-$(target))-apple-$$(subst -simulator,,$$(OS_LOWER-$(target)))-simulator'
 
-# Also patch the generated build-target macro if it exists
-find . -name "*.mk" -exec sed -i '' 's/-simulator-simulator/-simulator/g' {} \; 2>/dev/null || true
+if old in content:
+    content = content.replace(old, new)
+    print(f'SUCCESS: Replaced TARGET_TRIPLE line')
+else:
+    print('WARNING: Could not find exact TARGET_TRIPLE line to patch')
+    # Dump all TARGET_TRIPLE lines for debugging
+    for i, line in enumerate(content.split('\n')):
+        if 'TARGET_TRIPLE' in line:
+            print(f'  Line {i+1}: {line.strip()}')
+
+with open('Makefile', 'w') as f:
+    f.write(content)
+PYFIX
+
+echo "--- Verify fix applied ---"
+grep -n "TARGET_TRIPLE" Makefile | head -10
 
 cd ..
 
-echo ">>> Building OpenSSL for iOS (Python-Apple-support already cloned and patched)..."
+echo ">>> Building OpenSSL for iOS..."
 ./build-openssl.sh
 
 echo ">>> Building TDLib (tdjson.xcframework)..."
@@ -51,7 +63,6 @@ echo ">>> Building TDLib (tdjson.xcframework)..."
 echo ">>> Packaging artifact..."
 cd tdjson
 zip -r tdjson.xcframework.zip tdjson.xcframework || zip -r tdjson.xcframework.zip libtdjson.xcframework
-# Move to repo root so the workflow can find it
 mv tdjson.xcframework.zip ../../../../
 
 echo ">>> iOS build complete!"
