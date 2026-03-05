@@ -25,9 +25,12 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ios-${{ env.version }}-${{ env.commit_hash }}
-          name: iOS ${{ env.version }}-${{ env.commit_hash }}
-          body: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
+          tag: ios-td-v${{ env.version }}
+          name: iOS-Binaries-td-v${{ env.version }}
+          body: |
+            Pre-compiled TDLib iOS XCFramework (tdjson.xcframework) for device and simulator.
+            Source commit: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: 'tdjson.xcframework.zip'
           allowUpdates: true
+          omitSourceCodeArtifacts: true

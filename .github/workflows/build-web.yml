@@ -25,9 +25,12 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: web-${{ env.version }}-${{ env.commit_hash }}
-          name: WebAssembly ${{ env.version }}-${{ env.commit_hash }}
-          body: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
+          tag: web-td-v${{ env.version }}
+          name: Web-Binaries-td-v${{ env.version }}
+          body: |
+            Pre-compiled TDLib WebAssembly binaries (tdjson.js + tdjson.wasm).
+            Source commit: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: 'td/build-wasm/tdlib.zip'
           allowUpdates: true
+          omitSourceCodeArtifacts: true

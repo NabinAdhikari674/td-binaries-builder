@@ -38,7 +38,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tdjson-android-${{ matrix.arch }}
-          path: td/example/android/tdlib/libs/${{ matrix.arch }}/libtdjsonandroid.so
+          # TDLib's JSON build outputs libtdjson.so (not libtdjsonandroid.so)
+          path: td/example/android/tdlib/libs/${{ matrix.arch }}/libtdjson.so
 
   package-and-release:
     needs: build-android-arch
@@ -59,19 +60,24 @@ jobs:
       - name: Package artifacts
         run: |
           mkdir -p final_libs/arm64-v8a final_libs/armeabi-v7a final_libs/x86 final_libs/x86_64
-          mv libs/tdjson-android-arm64-v8a/libtdjsonandroid.so final_libs/arm64-v8a/libtdjson.so || true
-          mv libs/tdjson-android-armeabi-v7a/libtdjsonandroid.so final_libs/armeabi-v7a/libtdjson.so || true
-          mv libs/tdjson-android-x86/libtdjsonandroid.so final_libs/x86/libtdjson.so || true
-          mv libs/tdjson-android-x86_64/libtdjsonandroid.so final_libs/x86_64/libtdjson.so || true
+          cp libs/tdjson-android-arm64-v8a/libtdjson.so    final_libs/arm64-v8a/libtdjson.so   || true
+          cp libs/tdjson-android-armeabi-v7a/libtdjson.so  final_libs/armeabi-v7a/libtdjson.so || true
+          cp libs/tdjson-android-x86/libtdjson.so           final_libs/x86/libtdjson.so         || true
+          cp libs/tdjson-android-x86_64/libtdjson.so        final_libs/x86_64/libtdjson.so      || true
+          echo "--- Contents of final_libs ---"
+          find final_libs -type f
           cd final_libs
           zip -r ../libs.zip .
 
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: android-${{ env.version }}-${{ env.commit_hash }}
-          name: Android ${{ env.version }}-${{ env.commit_hash }}
-          body: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
+          tag: android-td-v${{ env.version }}
+          name: Android-Binaries-td-v${{ env.version }}
+          body: |
+            Pre-compiled TDLib Android binaries (libtdjson.so) for all architectures.
+            Source commit: https://github.com/tdlib/td/tree/${{ env.commit_hash }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: 'libs.zip'
           allowUpdates: true
+          omitSourceCodeArtifacts: true

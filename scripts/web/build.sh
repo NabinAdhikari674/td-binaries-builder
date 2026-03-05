@@ -36,6 +36,21 @@ emcmake cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DTD_ENABLE_LTO=ON ..
 emmake make -j4
 
 echo ">>> Packaging artifacts..."
-zip tdlib.zip tdjson.js tdjson.wasm
+echo "--- Files in build-wasm/ after build ---"
+ls -la
+
+JS_FILE=$(find . -maxdepth 1 -name "*.js" ! -name "*.worker.js" | head -1)
+WASM_FILE=$(find . -maxdepth 1 -name "*.wasm" | head -1)
+
+if [ -z "$JS_FILE" ] || [ -z "$WASM_FILE" ]; then
+  echo "ERROR: Could not find output JS or WASM files in build-wasm/. Build may have failed silently."
+  ls -la
+  exit 1
+fi
+
+echo "Found JS: $JS_FILE"
+echo "Found WASM: $WASM_FILE"
+
+zip tdlib.zip "$JS_FILE" "$WASM_FILE"
 
 echo ">>> Web build complete!"

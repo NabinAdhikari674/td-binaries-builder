@@ -16,26 +16,33 @@ mkdir build
 cd build
 cmake ..
 cmake --build . --target prepare_cross_compiling
+cd ..
 
-echo ">>> Building OpenSSL..."
-cd ../example/ios
+echo ">>> Cloning and patching Python-Apple-support before OpenSSL build..."
+cd example/ios
 
-# Clone the Python-Apple-support dependency ahead of time
-# so we can patch it BEFORE the Makefile runs clang with the wrong target triple.
-git clone https://github.com/beeware/Python-Apple-support
+# Pre-clone Python-Apple-support at the exact pinned commit TDLib uses
+git clone https://github.com/beeware/Python-Apple-support Python-Apple-support
 cd Python-Apple-support
 git checkout 6f43aba0ddd5a9f52f39775d0141bd4363614020
 git reset --hard
-git apply ../Python-Apple-support.patch
 
-echo ">>> Patching '-simulator-simulator' bug in Python-Apple-support Makefiles..."
-# Fix all occurrences of the invalid double-simulator target triple in-place
-grep -rl "\-simulator-simulator" . | xargs -I{} sed -i '' 's/-simulator-simulator/-simulator/g'
+# Apply TDLib's own patch first
+git apply ../Python-Apple-support.patch || echo "Patch already applied or not needed"
+
+echo ">>> Fixing -simulator-simulator bug in Python-Apple-support CC variables..."
+# The Makefile defines CC-$(target) using $(SDK).$(ARCH)
+# where SDK can be 'iphonesimulator' and then appends '-simulator' 
+# producing 'arm64-apple-ios-simulator-simulator'.
+# Fix: rewrite the -target flag pattern to deduplicate the simulator suffix.
+sed -i '' 's/-simulator-simulator/-simulator/g' Makefile
+
+# Also patch the generated build-target macro if it exists
+find . -name "*.mk" -exec sed -i '' 's/-simulator-simulator/-simulator/g' {} \; 2>/dev/null || true
 
 cd ..
 
-# Now run the openssl build (the Python-Apple-support clone already exists and is patched,
-# so build-openssl.sh will skip re-cloning and use our patched version)
+echo ">>> Building OpenSSL for iOS (Python-Apple-support already cloned and patched)..."
 ./build-openssl.sh
 
 echo ">>> Building TDLib (tdjson.xcframework)..."
@@ -43,7 +50,8 @@ echo ">>> Building TDLib (tdjson.xcframework)..."
 
 echo ">>> Packaging artifact..."
 cd tdjson
-zip -r tdjson.xcframework.zip tdjson.xcframework
-mv tdjson.xcframework.zip ../../../
+zip -r tdjson.xcframework.zip tdjson.xcframework || zip -r tdjson.xcframework.zip libtdjson.xcframework
+# Move to repo root so the workflow can find it
+mv tdjson.xcframework.zip ../../../../
 
 echo ">>> iOS build complete!"
