@@ -36,7 +36,20 @@ echo ">>> Building TDLib (tdjson.xcframework)..."
 
 echo ">>> Packaging artifact..."
 cd tdjson
-zip -r tdjson.xcframework.zip tdjson.xcframework || zip -r tdjson.xcframework.zip libtdjson.xcframework
+
+FRAMEWORK_NAME=""
+if [ -d "tdjson.xcframework" ]; then
+  FRAMEWORK_NAME="tdjson.xcframework"
+elif [ -d "libtdjson.xcframework" ]; then # Handle older naming convention just in case
+  FRAMEWORK_NAME="libtdjson.xcframework"
+else
+  echo "ERROR: Could not find output tdjson.xcframework. Dumping directory for diagnosis:"
+  ls -la
+  exit 1
+fi
+
+echo "Found framework: $FRAMEWORK_NAME. Zipping..."
+zip -r tdjson.xcframework.zip "$FRAMEWORK_NAME"
 mv tdjson.xcframework.zip ../../../../
 
 echo ">>> iOS build complete!"

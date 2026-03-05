@@ -23,7 +23,7 @@ git checkout $commit_hash
 git show --summary
 
 echo ">>> Patching TDLib CMakeLists.txt to allow building OpenSSL for WebAssembly..."
-sed -i "/message(WARNING \"Can't find OpenSSL: stop building\")/{n;d}" CMakeLists.txt
+sed -i '/if (NOT OPENSSL_FOUND OR TD_GENERATE_SOURCE_FILES)/,/endif()/ { /^\s*return()/d }' CMakeLists.txt
 echo "--- Verifying patch (the 'return()' line should be gone) ---"
 grep -C 4 "Can't find OpenSSL" CMakeLists.txt
 
