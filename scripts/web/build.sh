@@ -35,7 +35,6 @@ cd build-wasm
 source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
 
 # Configure with Emscripten. tdjson is the shared-library target.
-# We use tdjson_static for WASM since shared libs don't apply in WASM context.
 emcmake cmake \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DTD_ENABLE_LTO=ON \
@@ -45,9 +44,8 @@ emcmake cmake \
 echo ">>> Step 3: Listing all available CMake targets..."
 emmake make help 2>&1 | grep -i "td\|json\|wasm\|emscripten" | head -20 || true
 
-echo ">>> Step 4: Build the Emscripten tdjson target..."
-# Build tdjsonandroid (JSON interface for non-JVM) which Emscripten can link
-emmake make -j4 tdjson_static || emmake make -j4
+echo ">>> Step 4: Build the tdjson target for Emscripten..."
+emmake make -j4 tdjson
 
 echo ">>> Step 5: Listing build directory..."
 find . -maxdepth 3 -name "*.js" -o -name "*.wasm" 2>/dev/null
